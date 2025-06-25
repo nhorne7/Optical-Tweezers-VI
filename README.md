@@ -44,8 +44,9 @@ Upon the initial startup of the visual interface, the user will notice a few bas
 
 AUTO SHUTTER mode is where the main functionality of this visual interface shines. Once AUTO SHUTTER is enabled, the complete autonomous control of the system will begin, as demonstrated in the control flow diagram below.
 
+![Auto Shutter Control Flow Diagram](AutoControlFlowchart.jpg)
+
 AUTO SHUTTER mode works to automatically wait for optically trapped particles, turn off onboard LED's to allow the Raman measurements to take place, turn on and off the optical tweezers, and analyze individual particle trajectories which were Raman measured.
 
-![Auto Shutter Control Flow Diagram](image.jpg)
 
 

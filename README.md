@@ -229,13 +229,19 @@ em = tp.emsd(tm, mpp=..., fps=...)
 ```
 The imsd and emsd functions return plot data for the mean squared displacement against lag time for the individual partiles and the ensemble mean, respectively. 
 
-For imsd plots, all trajectories are simultaneously plotted. These are often noisy due to the gaussian noise present in brownian motion.
+For IMSD plots, all trajectories are simultaneously plotted. These are often noisy due to the gaussian noise present in brownian motion.
 
 ![Feature Detection Example](Readme_Images/imsd_sample.png)
 
-emsd plots however are quite smooth, as they are constructed as the ensemble mean of all trajectories, thereby mitigating the Gaussian noise. For diffusive particle behavior, this plot will be approximately linear.
+EMSD plots however are quite smooth, as they are constructed as the ensemble mean of all trajectories, thereby mitigating the Gaussian noise. For diffusive particle behavior, this plot will be approximately linear.
 
-![Feature Detection Example](Readme_Images/featuredetect.png)
+![Feature Detection Example](Readme_Images/ensemble_msd.png)
+
+After all 5 steps are complete, you will have successfully calibrated the trajectory analysis backend to allow for precise particle radius calculation.
+
+
+
+
 
 
 

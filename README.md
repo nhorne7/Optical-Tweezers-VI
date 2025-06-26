@@ -118,7 +118,7 @@ Upon the initial startup of the visual interface, the user will notice a few on-
 - **'a'** toggles between MANUAL MODE and AUTO MODE modes (more in detail below).
 - **'o'** opens and closes the SH05R/M shutter toggleably when interface is in MANUAL MODE.
 
-## AUTO MODE:
+## Auto Mode:
 
 AUTO MODE is where the main functionality of this visual interface shines. Once AUTO MODE is enabled, the complete autonomous control of the system will begin, as demonstrated in the control flow diagram below. 
 
@@ -239,15 +239,192 @@ EMSD plots however are quite smooth, as they are constructed as the ensemble mea
 
 After all 5 steps are complete, you will have successfully calibrated the trajectory analysis backend to allow for precise particle radius calculation.
 
+---
+# Programming Guide
 
 
+## Controllers
+All hardware interfacing is done through **controller classes**, which communicate on a higher level with the original packages responsible for hardware interfacing and OpenCV frontend. 
+
+The current **controller classes** present in this project are:
+
+- BaslerCameraController (interfaces with the BASLER camera)
+- KSC101Controller (interfaces with the KSC101 Solenoid Controller for Shutter Control)
+- ArduinoLEDController (interfaces with Arduino)
+- WebcamController (interfaces with a USB Webcam in replacement from a BASLER camera)
+- WindowController (interfaces with the OpenCV frontend to produce annotations on the visual interface)
+
+### Controller Initialization & Release
+
+To initialize a controller, one first creates a class instance and calls its initialization function.
+A sample initialization of a Basler Camera Controller for example would look like this.
+
+```python
+import Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface
+
+BaslerCameraController = Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface.BaslerCameraController()
+BaslerCameraController.initialize()
+
+... CODE HERE ...
+
+BaslerCameraController.release()
+```
+
+Only after the controller has been initialized can the rest of the interfacing member functions be used properly. 
+It is also important to call a controllers destructor at the end to ensure proper releasing of the hardware. As seen in the code above, one does so by calling the _.release()_ member function.
 
 
+Some controllers have specific parameters that must be passed to facilitate initialization. For example, the KSC101 requires a KSC101 device object which must first be initialized.
 
+```python
+# Create Instances of each Device to pass into controller
+KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
+KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101)
 
+# Initialize the Controller
+KSC101Controller.initialize()
 
+... CODE HERE ...
 
+KSC101Controller.release()
+```
+## The EventHandler Object
 
+This project manages all of its interactivity, timing, and automation through the _EventHandler_ class.
 
+The _EventHandler_ class contains all logic necessary to process and parse keyboard and mouse input and device control. It is initialized with access to all device controllers in order to maintaint complete control of the automation.
+
+To instantiate the EventHandler object, one must first initialize all controllers used in the script, that is: **KSC101Controller, WindowController, ArduinoLEDController, and a Camera controller (Webcam or BASLER).**
+
+A sample initialization of an event handling pipeline would be structured in the following way:
+
+```python
+import Hardware_Interfacing.KSC101Control.KSC101Interface
+import Hardware_Interfacing.WebCameraControl.WebcamInterface
+import Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface
+import VisualInterface_Frontend.WindowInterface
+import Control_Flow.EventHandling
+import cv2
+
+if __name__ == "__main__":
+    # Initialize the solenoid controller device
+    KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
+
+    # Create all controller objects
+    KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101)
+    webcam = Hardware_Interfacing.WebCameraControl.WebcamInterface.WebcamController()
+    window = VisualInterface_Frontend.WindowInterface.WindowController("NH's Particle Detector", 2)
+    ledController = Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface.ArduinoLEDController(3, 'COM5')
+    
+    # Initialize all controller objects
+    KSC101Controller.initialize()
+    ledController.initialize()
+    webcam.initialize()
+    window.initialize()
+
+    # Initialize an Event Handler with all controllers passed.
+    event_handler = Control_Flow.EventHandling.EventHandler(window, webcam, KSC101Controller, ledController)
+    
+   while True:
+        key = cv2.waitKey(1) & 0xFF
+        action - event_handler.handle_key(key) # This is one of the event handler capabilities. It determines what key inputs control in the setup.
+        if action == 'quit':
+            break 
+```
+
+At the moment the EventHandler class performs two main duties: Keyboard Input Handling, and AUTO MODE control.
+
+### Creation of custom key input methods:
+
+To create a custom method to be performed upon a key press, the EventHandler class can be modified under its _handle_key_ method. 
+
+Out of the box, there are already quite a few interactivity tools implemented. For example, this handle key section controls camera recording by pressing **'r'**:
+
+```python
+
+def handle_key(self, key):
+...
+    elif key == ord('r'):
+        if not self.camera.is_recording:
+            self.camera.startRecording()
+            self.window.is_recording = True
+        else:
+            self.camera.stopRecording()
+            self.window.is_recording = False
+...
+```
+In principle, one can simply introduce a new method corresponding to a specific key by appending an elif statement containing the expression:
+```python
+elif key == ord('key desired');
+...
+```
+followed by the desired controller methods.
+
+In theory, any method can be implemented combining any number of controllers, as long as they are passed as member objects to the EventHandler class. The EventHandler object allows for all control to be compactly stored in one location for easy readability and access for debugging.
+
+### Modification of the AUTO MODE control flow:
+
+The AUTO MODE control flow is completely controlled by the EventHandler class in in its _process_auto_mode_ method. For proper use, process_auto_mode should be called every iteration in the main loop of the program. It's arguments are _particle_in_box_ and _verbose_. This means that the frame must be grabbed from an appropriate camera controller before processing.
+
+#### AUTO MODE Event Handling Implementation:
+Below is a (while True:) loop containing the process_auto_mode method correctly:
+
+```python
+... NECESSARY INITIALIZATION CODE ...
+
+while True:
+    # READING FRAMES CORRECTLY #
+    ret, frame = webcam.read()
+    if not ret:
+        print("Failed to capture frame.")
+
+    # This line performs elementary circle detection and overlays this onto the screen, while also saying if a particle is in the box!
+    frame, particle_in_box = window.annotateCircleDetect(frame)
+
+    frame = window.annotateOverlay(frame) # This line annotates the visual interface with the bulk of the test annotations.
+
+    # EVENT HANDLING
+    if event_handler.auto_mode_enabled == True: # check that auto mode is on.
+        event_handler.process_auto_mode(particle_in_box, verbose = False)
+
+    key = cv2.waitKey(1) & 0xFF
+    action = event_handler.handle_key(key)
+    if action == 'quit':
+        break
+
+... NECESSARY RELEASE CODE ...  
+```
+#### Modification of Control Flow:
+
+As shown in the aforementioned diagram indicating the control flow of this visual interfaces' AUTO MODE (see above), the pipeline is divided into 3 main subprocesses:
+
+1. Waiting for Capture
+2. Initializing and Performing Raman Measurement
+3. Waiting for Dispersal
+
+At the beginning and end of each of these stages, different controller methods are called across the system to ensure the automated process runs smoothly (see control flow diagram above).
+
+If one desires perhaps in the future to add more controller methods, the implementation of such is near trivial.
+
+To manage the timings of each stage, a One Hot Encoding scheme of the current control flow sub process is used. The three boolean values which are used to encode the current control flow state are: _waiting_for_particle, waiting_for_measurement_, and _waiting_for_dispersal_.
+
+When one of these is set to True, the others are naturally False. The True-set boolean is considered the current subprocess. In the _process_auto_mode_ method, one can clearly distinguish the separate methods for each subprocess indicated by the elif statemets structured as below:
+
+```python
+def process_auto_mode(self, particle_in_box: bool, verbose=True):
+    if self.waiting_for_particle:
+        ...
+    elif self.waiting_for_measurement:
+        ...
+    elif self.waiting_for_dispersal:
+        ...
+```
+
+To add some controller method to any stage, one would simply place their controller method calls in the areas denoted with the ellipses, and update any member control flow variables respectively.
+
+The entire process has been made as intuitive as possible to ensure easy use and future modification.
+
+## Individual Controller's Methods
+...
 
 

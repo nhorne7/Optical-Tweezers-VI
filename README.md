@@ -124,7 +124,7 @@ AUTO MODE is where the main functionality of this visual interface shines. Once 
 
 **Ensure that once enabled, the detection bounding box is tightly positioned about the optical trap location, such that it turns blue/detected when a particle is present in the trap.** This can be done manually using EDIT MODE.
 
-![Auto Shutter Control Flow Diagram](AutoControlFlowchart.jpg)
+![Auto Shutter Control Flow Diagram](Readme_Images/AutoControlFlowchart.jpg)
 
 AUTO SHUTTER mode works to automatically wait for optically trapped particles, turn off onboard LED's to allow the Raman measurements to take place, turn on and off the optical tweezers, and analyze individual particle trajectories which were Raman measured. All of the control flow logic and timing is stored within the **EventHandler** class in the **\Control_Flow\EventHandling.py** file. Here, the member variables controlling the timing of each stage can be updated manually, and extra interfacing can be added at each stage of the measurement process respectively.
 
@@ -215,7 +215,7 @@ tp.mass_size(t1.groupby('particle').mean())
 ...
 ```
 
-// PLOT IMAGE HERE //
+![Feature Detection Example](Readme_Images/featuredetect.png)
 
 
 #### 5.  Visual Pixel Density / FPS configuration
@@ -223,11 +223,19 @@ tp.mass_size(t1.groupby('particle').mean())
 The last step is the most important for obtaining accurate radii and diffusivity results. The algorithm used must translate pixels to micrometers and frames to seconds in order to correctly estimate radii and diffusivity in SI units. To do this, the $\mu$m/pixel of microscope being used and the FPS of the video used **must be correctly passed to the imsd and emsd functions**.
 
 ```python
+im = tp.imsd(tm, mpp=..., fps=...)
 em = tp.emsd(tm, mpp=..., fps=...)
 ...
 ```
+The imsd and emsd functions return plot data for the mean squared displacement against lag time for the individual partiles and the ensemble mean, respectively. 
 
+For imsd plots, all trajectories are simultaneously plotted. These are often noisy due to the gaussian noise present in brownian motion.
 
+![Feature Detection Example](Readme_Images/imsd_sample.png)
+
+emsd plots however are quite smooth, as they are constructed as the ensemble mean of all trajectories, thereby mitigating the Gaussian noise. For diffusive particle behavior, this plot will be approximately linear.
+
+![Feature Detection Example](Readme_Images/featuredetect.png)
 
 
 

@@ -520,14 +520,14 @@ finally:
 
 At times it is more convenient to debug code and test using a computer webcam rather than the fixed Basler Camera. To facilitate this, a Webcam controller was added to the project. All methods present in the Basler Camera work the exact same way in the Webcam Controller, only now all methods are performed through the webcam instead, e.g. the methods are:
 
-- initialize()
-- release()
-- read()
-- startRecording()
-- stopRecording()
-- screengrab()
+- initialize() (Initializes the Webcam Controller and Fills Image Buffer)
+- release() (Correctly releases buffer data and stops capturing/recording)
+- read() (Reads the exact frame captured by the Webcam at that moment)
+- startRecording() (Begins a video recording)
+- stopRecording() (Stops the video recording, and saves to \Recordings\..)
+- screengrab() (Takes a screenshot which is saved to \Screenshots\..)
 
-When implementing a webcame, the same procedure of initialization should be followed, e.g.:
+When implementing a webcam controller, the same procedure of initialization should be followed, e.g.:
 
 ```python
 # We first instantiate a Basler Camera Controller Object

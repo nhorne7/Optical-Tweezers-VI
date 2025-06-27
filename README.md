@@ -1,5 +1,17 @@
 # Optical Tweezers Visual Interface
 
+### Contents:
+- [About the Visual Interface](#about-the-visual-interface)
+- [Installation & Required Dependencies](#installation--required-dependencies)
+- [OOB Use of the Visual Interace](#oob-usage-of-visual-interface)
+- [Auto Mode Usage](#auto-mode)
+- [Tracking Calibration Instructions](#tracking-calibration-trackpycalibrationnotebookipynb)
+- [Programming Guide](#programming-guide)
+- [Device Controllers](#controllers)
+- [The EventHandler Object](#the-eventhandler-object)
+- [Individual Device Controller Methods](#individual-device-controller-methods)
+
+
 ## About the Visual Interface
 This repository features a visual GUI programmed in Python which permits the visual detection of microscale particles and nanoscale diffraction patterns. It's primary backends are supported by:
 - [OpenCV](https://docs.opencv.org/4.x/index.html) (for all Image processing tasks)
@@ -70,7 +82,7 @@ kinesis_path = r"YOUR_PATH_HERE"
 
 After this the installation of the Kinesis SDK is complete.
 
-#### pyFirmata2 Installation:
+#### pyFirmata2 Installation & Arduino Setup:
 
 **PyFirmata2** is a Python interface for the Firmata protocol. It allows for USB serial communication with the Arduino through Python. 
 
@@ -424,7 +436,166 @@ To add some controller method to any stage, one would simply place their control
 
 The entire process has been made as intuitive as possible to ensure easy use and future modification.
 
-## Individual Controller's Methods
-...
+## Individual Device Controller Methods
 
+### The KSC101 Controller
 
+The first and most important controller for the control of the optical tweezing setup is the KSC101 Controller. This Thorlabs Kinesis Wrapper class allows efficient interactivity with the KSC101 Solenoid Controller. One can find the source code of this controller class under _\Hardware_Interfacing\KSC101Control\KSC101Interface.py_.
+
+The methods of the KSC101 Controller are:
+
+- initialize() (Initializes the KSC101 and establishes communication)
+- release() (Destructor for the KSC101 Controller Class)
+- set_state() (Set a custom state for the KSC101 controller (see [sample code](https://github.com/Thorlabs/Motion_Control_Examples/blob/main/Python/KCube/KSC101/KSC101_pythonnet.py) under SolenoidStatus.OperatingState)
+- open() (Opens the shutter (with debouncing))
+- close() (Closes the shutter (with debouncing))
+
+To initialize a KSC101 Controller, we pass in a device object corresponding to our physical KSC101. This is done using the out-of-class CreateDevice() method, which returns a custom KSC101 device object. Only after the device has been created can a KSC101 Controller be made by passing the corresponding KSC101 Device. This allows for setups which include multiple KSC101s, as different device objects can be instantiated. A sample device creation and KSC101 Controller class initialization would be performed as follows:
+
+```python
+# First, we create the device object
+KSC101_device = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("SOME_SERIAL_NUMBER")
+
+# Next we instantiate its corresponding device controller object.
+KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101_device)
+
+# Now we may call the initializer for the device controller
+KSC101Controller.initialize()
+
+# At this point, one can perform the methods of the KSC101 Controller freely and control the shutter
+# The code below opens and closes the shutter with a one second delay.
+
+KSC101Controller.open()
+time.sleep(1)
+KSC101Controller.close()
+
+# Make sure after performing all methods, the destructor release() is called.
+KSC101Controller.release()
+```
+
+### The Basler Camera Controller
+
+The next most important controller that is used in any setup containing a visual feedback interface is the Basler Camera Controller. This controller manages reading from the Basler Microscope camera, imaging, and recording. 
+
+The Basler Camera Controller main methods are:
+
+- initialize() (Initializes the Basler Camera and establishes proper communication)
+- release() (Properly disconnects from the Basler Camera and stops any running recordings)
+- read() (Returns an OpenCV formatted image matrix in BGR format of the currently captured frame (returns the frame and a return result))
+- startRecording() (Begins a video recording through the Basler Camera)
+- stopRecording() (Ends the Basler Camera video recording and saves to \Recordings\..)
+- screengrab() (Grabs and saves the currently captured raw Basler Camera Frame to \Screenshots\..)
+
+These methods are simply abstractions of the base methods, which can be found it its official pypylon code [here](https://github.com/basler/pypylon).
+
+Below is a sample device creation and OpenCV Capture loop for the Basler Camera and displays it to a window via a Window Controller object.
+
+```python
+# We first instantiate a Basler Camera Controller Object
+camera = Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface.BaslerCameraController()
+# Now we initialize the camera
+camera.initialize()
+
+# Of course a camera isn't useful unless there is a window to display it to, so we also instantiate a window controller
+window = VisualInterface_Frontent.WindowInterface.WindowController("Sample Basler Camera Example")
+window.initialize()
+
+# Now we create a main loop to read repetitively from the camera
+try:
+    while True:
+        ret, frame = camera.read()
+        if not ret:
+            print("Failed to capture frame.")
+            break
+
+        # To show off our image, we call the imshow method of the window controller each loop iteration.
+        window.imshow(frame)
+finally:
+    # Make sure that we destruct our controllers
+    camera.release()
+    window.release()
+```
+
+### The Webcam Controller
+
+At times it is more convenient to debug code and test using a computer webcam rather than the fixed Basler Camera. To facilitate this, a Webcam controller was added to the project. All methods present in the Basler Camera work the exact same way in the Webcam Controller, only now all methods are performed through the webcam instead, e.g. the methods are:
+
+- initialize()
+- release()
+- read()
+- startRecording()
+- stopRecording()
+- screengrab()
+
+When implementing a webcame, the same procedure of initialization should be followed, e.g.:
+
+```python
+# We first instantiate a Basler Camera Controller Object
+camera = Hardware_Interfacing.WebCameraControl.WebcamInterface.WebcamController()
+# Now we initialize the camera
+camera.initialize()
+
+# Of course a camera isn't useful unless there is a window to display it to, so we also instantiate a window controller
+window = VisualInterface_Frontent.WindowInterface.WindowController("Sample Webcamera Example")
+window.initialize()
+
+# Now we create a main loop to read repetitively from the camera
+try:
+    while True:
+        ret, frame = camera.read()
+        if not ret:
+            print("Failed to capture frame.")
+            break
+
+        # To show off our image, we call the imshow method of the window controller each loop iteration.
+        window.imshow(frame)
+finally:
+    # Make sure that we destruct our controllers
+    camera.release()
+    window.release()
+```
+
+### The Window Controller
+
+As seen in the Basler Camera Controller code above, the window controller allows for the direct control of the OpenCV window and display. It is responsible for all annotations seen on the screen, as well as elementary particle detection overlay (NOT THE SAME DETECTION ALGORITHM AS USED FOR TRACKING, ONLY FOR PARTICLE BOUNDING BOX DETECTION)
+
+Its methods are:
+
+- initialize() (Initializes the Window controller, creates a window and instantiates a mouse callback for mouse interactivity)
+- imshow(frame) (Shows an openCV BGR style image to the window. Analogous to cv2.imshow())
+- createSlider(name, max_val, init_val) (This allows the simple creation of a slider which appears on the border of the screen, its value can be obtained through the getSliderValue method)
+- getSliderValue(name) (Gets the current value of the slider of given name, useful for linking variables to sliders)
+- annotateCircleDetect(frame) (A lightweight circle detection algorithm built from OpenCV's built-in HoughCircles functionality. Used for the bounding box particle detection, and is calibrated using sliders named 'param2', 'minRadius' and 'maxRadius')
+- annotateOveraly(frame) (returns an annotated copy of the passed frame with text indicating the current activated modes: Editing Mode, Recording video, automode/manualmode, particle_trapped, etc.)
+- release() (releases the controller and properly resets all member variables)
+
+A sample demonstration of this code can be seen in the previous code. For further code examples, consult the prepackaged main.py file which includes the annotations.
+
+### The ArduinoLED controller
+
+Throughout the automation cycle, it is convenient and somewhat necessary to turn the onboard setup LED on and off to reduce noise/interference in the Raman data collection process. To facilitate this, an Arduino controller was integrated into the project.
+
+**For setup instructions, consult the 'pyFirmata2 Installation & Arduino Setup' section of this documentation.**
+
+The methods of the ArduionLED controller are quite minimal due to the limited hardware (just an LED):
+
+- initialize() (Initialized the Arduino Controller)
+- release() (Destructs the Arduino Controller and turns off LED before disconnecting)
+- setLEDDutyCycle(duty_cycle:float) (Takes a float between 0 and 1 to output the desired percentage duty cycle for the PWM output)
+
+Below is an example implementation of a simple 'blinking' script, which turns the on-setup LED on and off periodically until keyboard interrupted:
+
+```python
+board = Hardware_Interfacing.ArduinoLEDInterface.ArduinoLEDController()
+
+board.initialize()
+
+try:
+    while True:
+        board.setLEDDutyCycle(1)
+        time.sleep(1)
+        board.setLEDDutyCycle(0)
+        time.sleep(1)
+except KeyboardInterrupt:
+    board.release()
+```

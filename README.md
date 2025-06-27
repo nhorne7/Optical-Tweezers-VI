@@ -3,13 +3,13 @@
 ### Contents:
 - [About the Visual Interface](#about-the-visual-interface)
 - [Installation & Required Dependencies](#installation--required-dependencies)
-- [OOB Use of the Visual Interace](#oob-usage-of-visual-interface)
+    - [OOB Use of the Visual Interace](#oob-usage-of-visual-interface)
 - [Auto Mode Usage](#auto-mode)
 - [Tracking Calibration Instructions](#tracking-calibration-trackpycalibrationnotebookipynb)
 - [Programming Guide](#programming-guide)
-- [Device Controllers](#controllers)
-- [The EventHandler Object](#the-eventhandler-object)
-- [Individual Device Controller Methods](#individual-device-controller-methods)
+    - [Device Controllers](#controllers)
+    - [The EventHandler Object](#the-eventhandler-object)
+    - [Individual Device Controller Methods](#individual-device-controller-methods)
 
 
 ## About the Visual Interface

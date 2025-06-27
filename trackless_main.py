@@ -14,7 +14,7 @@ if __name__ == "__main__":
     KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
     KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101)
     camera = Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface.BaslerCameraController()
-    window = VisualInterface_Frontend.WindowInterface.WindowController("NH's Particle Detector", 2)
+    window = VisualInterface_Frontend.WindowInterface.WindowController("NH's Particle Detector", 0.5)
     ledController = Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface.ArduinoLEDController(3)
     
     # Initialize all controllers objects

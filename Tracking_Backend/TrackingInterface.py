@@ -9,8 +9,8 @@ import os
 from datetime import datetime
 import time
 from tqdm import tqdm
-from multiprocessing import Process
-import glob
+import shutil
+from pathlib import Path
 
 class TrackingHandler:
     def __init__(self, recording_dir=r"./Recordings", invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
@@ -33,20 +33,18 @@ class TrackingHandler:
 
     # NOTE TO USER! DUE TO THE MULTIPROCESSING OF THE TP.BATCH FUNCTION, THIS FUNCTION CALL MUST ALWAYS BE WRAPPED IN A IF NAME == MAIN CONDITIONAL OR IT WILL CAUSE A RUNTIME ERROR.
     def videoAnalyzeTrajectories(self, vid_path):
-        print("DEBUG: Beginning tracking!")
         start_time = time.time()
         @pims.pipeline
         def gray(image):
             return image[:, :, 1]
         tp.enable_numba()
         tp.quiet()
-        print("Test")
         frames = gray(pims.PyAVVideoReader(vid_path))
         frames = list(frames) # Load Frames to system RAM
         n_frames = len(frames)
 
         print(f"Detecting Particle Positions for {vid_path}")
-        f_batch = tp.batch(frames, self.pix_diameter, minmass=self.minmass, invert=self.invert, processes=1)
+        f_batch = tp.batch(frames, self.pix_diameter, minmass=self.minmass, invert=self.invert, processes='auto')
 
         print(f"Linking & Filtering Trajectories for {vid_path}")
         trajectories = tp.link(f_batch, self.traj_search_range, memory=self.traj_memory)
@@ -312,6 +310,43 @@ class TrackingHandler:
         fig3.tight_layout()
         fig3.savefig(os.path.join(root_dir, "trajectories.png"))
         plt.close(fig3)
+
+
+    """This function takes in a to_track directory, finds the oldest video file in this directory, and performs a track on it. 
+    
+    After it is complete, it moves this video file to the complete_track_dir.
+    
+    When called, it does this one time. if there are no compatible files in the directory, nothing happens."""
+    def trackLatest(self, to_track_dir, complete_track_dir): 
+        allowed_extensions = {'.mp4', '.avi', '.mov', '.mkv'} # Update this later if adding more lossless video recording formats!
+
+        # Convert inputs that we have into path objects
+        to_track_path = Path(to_track_dir)
+        complete_path = Path(complete_track_dir)
+
+        # Make sure that the output directory that we will write to exists
+        complete_path.mkdir(parents=True, exist_ok=True)
+
+        # Now we create a list of all compatible video files in the directory
+        video_files = [file for file in to_track_path.iterdir() if file.is_file() and file.suffix.lower() in allowed_extensions] # Ensures that the file is indeed a valid file
+
+        if not video_files:
+            print("No video files left to track.")
+            return False
+        
+        video_files.sort(key=lambda f: f.stat().st_mtime)
+
+        oldest_file = video_files[0] # Only take out the oldest video (smallest st_mtime)
+
+        # Analyze the trajectories for the oldest video
+        self.videoAnalyzeTrajectories(str(oldest_file))
+
+        # After completion, move the file to the complete_track_dir
+        target_path = complete_path / oldest_file.name
+        shutil.move(str(oldest_file), str(target_path))
+
+        print(f"Video {oldest_file.name} transferred to {complete_track_dir} successfully")
+        return True
 
 
 #df = pd.read_csv("/Users/noah/Desktop/Particle Tracking/TrackingSoftware/Trajectory_Data/FirstTrackTestData/trajectory.csv")

@@ -11,8 +11,8 @@ import time
 from tqdm import tqdm
 
 class TrackingHandler:
-    def __init__(self):
-        pass
+    def __init__(self)->None: # No need for member variables, all methods are self contained
+        return None
     # NOTE TO USER! DUE TO THE MULTIPROCESSING OF THE TP.BATCH FUNCTION, THIS FUNCTION CALL MUST ALWAYS BE WRAPPED IN A IF NAME == MAIN CONDITIONAL OR IT WILL CAUSE A RUNTIME ERROR.
     def videoAnalyzeTrajectories(self, vid_path, invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
         start_time = time.time()
@@ -48,7 +48,7 @@ class TrackingHandler:
 
         # File Creation
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        root_dir = os.path.join(os.getcwd(), "Trajectory_Data", timestamp)
+        root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Trajectory_Data", timestamp)
         os.makedirs(root_dir, exist_ok=True)
 
         print("Computing per-particle diffusivities and radii for HISTOGRAM PLOTS..")

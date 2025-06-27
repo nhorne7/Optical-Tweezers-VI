@@ -1,7 +1,9 @@
 import TrackingInterface
 # Sample code on running a full track with file output. Parameters are tweaked to the micron scale setup.
+
+TrackingHandler = TrackingInterface.TrackingHandler()
 if __name__ == "__main__":
-    TrackingInterface.videoAnalyzeTrajectories(r"C:\Users\nohor3086\Desktop\KSC101_Shutter_Controller\Recordings\recording_2025-06-19_10-16-51.avi",
+    TrackingHandler.videoAnalyzeTrajectories(r"Tracking_Backend\Sample_Recording\recording_2025-06-19_10-15-43.avi",
                                               invert=False,
                                               minmass=10000,
                                               pix_diameter=51,

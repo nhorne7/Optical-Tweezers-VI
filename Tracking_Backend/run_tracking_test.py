@@ -1,9 +1,7 @@
 import TrackingInterface
 # Sample code on running a full track with file output. Parameters are tweaked to the micron scale setup.
 
-TrackingHandler = TrackingInterface.TrackingHandler()
-if __name__ == "__main__":
-    TrackingHandler.videoAnalyzeTrajectories(r"Tracking_Backend\Sample_Recording\recording_2025-06-19_10-15-43.avi",
+TrackingHandler = TrackingInterface.TrackingHandler(recording_dir=r"Tracking_Backend\Sample_Recording",
                                               invert=False,
                                               minmass=10000,
                                               pix_diameter=51,
@@ -12,3 +10,5 @@ if __name__ == "__main__":
                                               stub_traj_length=5,
                                               microns_per_pix=0.07289795,
                                               fps=60)
+if __name__ == "__main__":
+    TrackingHandler.run_latest_video_async()

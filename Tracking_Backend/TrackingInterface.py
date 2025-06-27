@@ -9,42 +9,62 @@ import os
 from datetime import datetime
 import time
 from tqdm import tqdm
+from multiprocessing import Process
+import glob
 
 class TrackingHandler:
-    def __init__(self)->None: # No need for member variables, all methods are self contained
+    def __init__(self, recording_dir=r"./Recordings", invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
+        self.thread = None
+        self.is_running = False 
+        self.recording_dir = recording_dir
+        self.invert = invert
+        self.minmass = minmass
+        self.pix_diameter = pix_diameter
+        self.traj_memory = traj_memory
+        self.traj_search_range = traj_search_range
+        self.stub_traj_length = stub_traj_length
+        self.microns_per_pix = microns_per_pix
+        self.fps = fps
+        self.room_temperature_c = room_temperature_c
+        self.eta = eta
+        self.only_tagged = only_tagged
         return None
+    
+
     # NOTE TO USER! DUE TO THE MULTIPROCESSING OF THE TP.BATCH FUNCTION, THIS FUNCTION CALL MUST ALWAYS BE WRAPPED IN A IF NAME == MAIN CONDITIONAL OR IT WILL CAUSE A RUNTIME ERROR.
-    def videoAnalyzeTrajectories(self, vid_path, invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
+    def videoAnalyzeTrajectories(self, vid_path):
+        print("DEBUG: Beginning tracking!")
         start_time = time.time()
         @pims.pipeline
         def gray(image):
             return image[:, :, 1]
         tp.enable_numba()
         tp.quiet()
+        print("Test")
         frames = gray(pims.PyAVVideoReader(vid_path))
         frames = list(frames) # Load Frames to system RAM
         n_frames = len(frames)
 
         print(f"Detecting Particle Positions for {vid_path}")
-        f_batch = tp.batch(frames, pix_diameter, minmass=minmass, invert=invert, processes='auto')
+        f_batch = tp.batch(frames, self.pix_diameter, minmass=self.minmass, invert=self.invert, processes=1)
 
         print(f"Linking & Filtering Trajectories for {vid_path}")
-        trajectories = tp.link(f_batch, traj_search_range, memory=traj_memory)
-        long_trajectories = tp.filter_stubs(trajectories, stub_traj_length)
+        trajectories = tp.link(f_batch, self.traj_search_range, memory=self.traj_memory)
+        long_trajectories = tp.filter_stubs(trajectories, self.stub_traj_length)
         drift = tp.compute_drift(long_trajectories)
 
         print(f"Cleaning Trajectories for {vid_path}")
         fixed_trajectories = tp.subtract_drift(long_trajectories.copy(), drift)
         fixed_trajectories = fixed_trajectories.reset_index(drop=True)
-        emsd = tp.emsd(fixed_trajectories, microns_per_pix, fps,max_lagtime=n_frames) 
+        emsd = tp.emsd(fixed_trajectories, self.microns_per_pix, self.fps,max_lagtime=n_frames) 
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
         D = (A/4)*10**(-12)
 
         kb = 1.380649E-23
-        T_k = room_temperature_c+273.15
-        r = (kb*T_k)/(6*np.pi*eta*D)
+        T_k = self.room_temperature_c+273.15
+        r = (kb*T_k)/(6*np.pi*self.eta*D)
 
         # File Creation
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -59,16 +79,16 @@ class TrackingHandler:
 
         for pid in tqdm(particle_ids):
             traj = fixed_trajectories[fixed_trajectories['particle'] == pid]
-            if len(traj) < stub_traj_length:
+            if len(traj) < self.stub_traj_length:
                 continue
-            imsd = tp.imsd(traj, microns_per_pix, fps)
+            imsd = tp.imsd(traj, self.microns_per_pix, self.fps)
             try:
                 fit = tp.utils.fit_powerlaw(imsd, plot=False)
 
                 A_i = fit['A'].iloc[0]
                 n_i = fit['n'].iloc[0]
                 D_i = (A_i/4) * 1e-12 # In meters now
-                r_i = (kb * T_k) / (6 * np.pi * eta * D_i)
+                r_i = (kb * T_k) / (6 * np.pi * self.eta * D_i)
                 per_particle_D.append(D_i * 1e12) # Back to micrometers^2 seconds
                 per_particle_r.append(r_i * 1e6)  # micrometers units
             except Exception as e:
@@ -125,16 +145,16 @@ class TrackingHandler:
             f.write(f"Video File: {video_name}\n")
             f.write(f"Resolution: {res_str}\n")
             f.write(f"Total Frames: {n_frames}\n")
-            f.write(f"Microns per Pixel: {microns_per_pix} um/px\n")
-            f.write(f"Framerate: {fps} fps\n")
-            f.write(f"Inversion Applied: {invert}\n\n")
+            f.write(f"Microns per Pixel: {self.microns_per_pix} um/px\n")
+            f.write(f"Framerate: {self.fps} fps\n")
+            f.write(f"Inversion Applied: {self.invert}\n\n")
 
             f.write("TRACKING PARAMETERS\n")
-            f.write(f"Minmass: {minmass}\n")
-            f.write(f"Particle Radius: {pix_diameter} px\n")
-            f.write(f"Search Range: {traj_search_range} px\n")
-            f.write(f"Memory: {traj_memory} frames\n")
-            f.write(f"Stub Trajectory Threshold: {stub_traj_length} frames\n\n")
+            f.write(f"Minmass: {self.minmass}\n")
+            f.write(f"Particle Radius: {self.pix_diameter} px\n")
+            f.write(f"Search Range: {self.traj_search_range} px\n")
+            f.write(f"Memory: {self.traj_memory} frames\n")
+            f.write(f"Stub Trajectory Threshold: {self.stub_traj_length} frames\n\n")
 
             f.write("RESULTS\n")
             f.write(f"Initial Trajectories: {n_total_traj}\n")
@@ -146,8 +166,8 @@ class TrackingHandler:
             f.write(f"MSD @ 1 frame lag: {msd_lag1:.3f} um^2\n\n")
 
             f.write("PHYSICAL CONSTANTS\n")
-            f.write(f"Temperature: {room_temperature_c} C ({T_k:.2f} K)\n")
-            f.write(f"Viscosity: {eta:.3e} Pa s\n")
+            f.write(f"Temperature: {self.room_temperature_c} C ({T_k:.2f} K)\n")
+            f.write(f"Viscosity: {self.eta:.3e} Pa s\n")
             f.write(f"Boltzmann Constant: {kb:.6e} J/K\n\n")
 
             motion_type = "approx. diffusive (n = 1)"
@@ -159,7 +179,7 @@ class TrackingHandler:
 
         
         # Image Creation
-        imsd = tp.imsd(fixed_trajectories, microns_per_pix, fps, max_lagtime=n_frames)
+        imsd = tp.imsd(fixed_trajectories, self.microns_per_pix, self.fps, max_lagtime=n_frames)
         fig1, ax1 = plt.subplots()
         ax1.plot(imsd.index, imsd, 'k-', alpha=0.2)
         ax1.set_xscale('log')
@@ -194,6 +214,10 @@ class TrackingHandler:
         plt.close(fig3)
         tp.disable_numba()
         print(f"{n_frames} frames analyzed in {(time.time()-start_time):.2f} s")
+
+
+
+# USED FOR INDIVIDUAL PARTICLE TAGGING (working)
 
     def tagBoxedTrajectories(self, trajectories:pd.DataFrame, bbox_start, bbox_end)->pd.DataFrame:
         boundsTL = (min(bbox_start[0], bbox_end[0]), min(bbox_start[1],bbox_end[1]))

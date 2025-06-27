@@ -1,3 +1,5 @@
+import Hardware_Interfacing.BaslerCameraControl
+import Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface
 import Hardware_Interfacing.KSC101Control.KSC101Interface
 import Hardware_Interfacing.WebCameraControl.WebcamInterface
 import Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface
@@ -11,7 +13,7 @@ if __name__ == "__main__":
     # Create Instances of each Controller & Device
     KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
     KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101)
-    camera = Hardware_Interfacing.WebCameraControl.WebcamInterface.WebcamController()
+    camera = Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface.BaslerCameraController()
     window = VisualInterface_Frontend.WindowInterface.WindowController("NH's Particle Detector", 2)
     ledController = Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface.ArduinoLEDController(3)
     

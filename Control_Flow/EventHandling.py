@@ -26,8 +26,8 @@ class EventHandler:
 
 
         self.TRAP_CONFIRMATION_TIME = 2.0  
-        self.MEASUREMENT_TIME = 5.0      
-        self.DISPERSAL_WAIT_TIME = 3.0     
+        self.MEASUREMENT_TIME = 15.0      
+        self.DISPERSAL_WAIT_TIME = 10.0     
         self.LED_ON_TIME = 2.0
 
 

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # Create Instances of each Controller & Device
     KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
     KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101)
-    camera = Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface.BaslerCameraController()
+    camera = Hardware_Interfacing.WebCameraControl.WebcamInterface.WebcamController()
     window = VisualInterface_Frontend.WindowInterface.WindowController("NH's Particle Detector", 0.5)
     ledController = Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface.ArduinoLEDController(3)
     
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             frame, particle_in_box = window.annotateCircleDetect(frame) # This line displays circle detection labels on screen
             frame = window.annotateOverlay(frame) # This line annotates all text
             if event_handler.auto_mode_enabled:
-                event_handler.process_auto_mode(particle_in_box, frame, verbose=False) # This handles the control of the autoshutter feature (automatic measurement pipeline)
+                event_handler.process_auto_mode(particle_in_box, verbose=False) # This handles the control of the autoshutter feature (automatic measurement pipeline)
             
             # After all annotations, we display the image to the visual interface with all annotations
             window.imshow(frame)

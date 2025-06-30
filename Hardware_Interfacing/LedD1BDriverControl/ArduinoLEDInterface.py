@@ -24,6 +24,14 @@ class ArduinoLEDController:
             self.board.digital[13].write(1) # For debugging
         elif duty_cycle == 0:
             self.board.digital[13].write(0)
+    
+    def ledON(self):
+        self.pwm_out.write(1)
+        self.board.digital[13].write(1)
+    
+    def ledOFF(self):
+        self.pwm_out.write(0)
+        self.board.digital[13].write(0)
             
     def release(self):
         if self.pwm_out:

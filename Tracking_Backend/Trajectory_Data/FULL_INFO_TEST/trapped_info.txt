@@ -1,0 +1,15 @@
+======THIS IS FOR ONLY THOSE PARTICLES STARTING IN BOUNDING BOX======
+RESULTS
+Originally Trapped Trajectories: 4
+Mean Trajectory Length: 62.5 frames
+Average Radius: 0.939 um
+Diffusion Coefficient: 0.228 um^2/s  (2.28e-13 m^2/s)
+MSD Fit Parameters: A = 9.13e-01, n = 1.32
+MSD @ 1 frame lag: 0.023 um^2
+
+PHYSICAL CONSTANTS
+Temperature: 20 C (293.15 K)
+Viscosity: 1.002e-03 Pa s
+Boltzmann Constant: 1.380649e-23 J/K
+
+Notes: Appears consistent with superdiffusive! (n > 1) behavior.

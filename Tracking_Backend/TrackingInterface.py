@@ -212,7 +212,7 @@ class TrackingHandler:
         plt.close(fig3)
         tp.disable_numba()
         print(f"{n_frames} frames analyzed in {(time.time()-start_time):.2f} s")
-
+        return fixed_trajectories, root_dir
 
 
 # USED FOR INDIVIDUAL PARTICLE TAGGING (working)
@@ -227,23 +227,19 @@ class TrackingHandler:
         print(f"Particles starting in box: {list(particles_in_box)}")
         return trajectories
 
-    def analyzeTaggedTrajectories(self, trajectories:pd.DataFrame, room_temperature_c = 20, eta=1.002E-3, microns_per_pix = 0.08, fps = 60)->None:
+    def analyzeTaggedTrajectories(self, trajectories:pd.DataFrame, root_dir)->None:
         filtered_trajectories = trajectories.loc[trajectories['started_in_box'] == True]
         filtered_trajectories = filtered_trajectories.reset_index(drop=True)
-        emsd = tp.emsd(filtered_trajectories, microns_per_pix, fps) 
+        emsd = tp.emsd(filtered_trajectories, self.microns_per_pix, self.fps) 
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
         D = (A/4)*10**(-12)
 
         kb = 1.380649E-23
-        T_k = room_temperature_c+273.15
-        r = (kb*T_k)/(6*np.pi*eta*D)
+        T_k = self.room_temperature_c+273.15
+        r = (kb*T_k)/(6*np.pi*self.eta*D)
 
-        # File Creation
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        root_dir = os.path.join(os.getcwd(), "Trajectory_Data", timestamp)
-        os.makedirs(root_dir, exist_ok=True)
 
         # Save trajectory CSV
         trapped_traj_csv_path = os.path.join(root_dir, "originally_trapped_trajectory.csv")
@@ -257,23 +253,23 @@ class TrackingHandler:
         msd_lag1 = emsd.iloc[0]
         r_um = r * 1e6
         D_um2s = D * 1e12
-        info_path = os.path.join(root_dir, "info.txt")
+        info_path = os.path.join(root_dir, "trapped_info.txt")
         with open(info_path, 'w') as f:
             f.write("======THIS IS FOR ONLY THOSE PARTICLES STARTING IN BOUNDING BOX======\n")
             f.write("RESULTS\n")
             f.write(f"Originally Trapped Trajectories: {n_filtered_traj}\n")
             f.write(f"Mean Trajectory Length: {mean_len:.1f} frames\n")
-            f.write(f"Average Radius: {r_um:.3f} µm\n")
-            f.write(f"Diffusion Coefficient: {D_um2s:.3f} µm²/s  ({D:.2e} m²/s)\n")
+            f.write(f"Average Radius: {r_um:.3f} um\n")
+            f.write(f"Diffusion Coefficient: {D_um2s:.3f} um^2/s  ({D:.2e} m^2/s)\n")
             f.write(f"MSD Fit Parameters: A = {A:.2e}, n = {n:.2f}\n")
-            f.write(f"MSD @ 1 frame lag: {msd_lag1:.3f} µm²\n\n")
+            f.write(f"MSD @ 1 frame lag: {msd_lag1:.3f} um^2\n\n")
 
             f.write("PHYSICAL CONSTANTS\n")
-            f.write(f"Temperature: {room_temperature_c} °C ({T_k:.2f} K)\n")
-            f.write(f"Viscosity: {eta:.3e} Pa·s\n")
+            f.write(f"Temperature: {self.room_temperature_c} C ({T_k:.2f} K)\n")
+            f.write(f"Viscosity: {self.eta:.3e} Pa s\n")
             f.write(f"Boltzmann Constant: {kb:.6e} J/K\n\n")
 
-            motion_type = "diffusive (n ≈ 1) (✓)"
+            motion_type = "diffusive (n = 1)"
             if n < 0.9:
                 motion_type = "subdiffusive! (n < 1)"
             elif n > 1.1:
@@ -281,34 +277,23 @@ class TrackingHandler:
             f.write(f"Notes: Appears consistent with {motion_type} behavior.\n")
 
         
-        # Image Creation
-        imsd = tp.imsd(filtered_trajectories, microns_per_pix, fps)
-        fig1, ax1 = plt.subplots()
-        ax1.plot(imsd.index, imsd, 'k-', alpha=0.1)
-        ax1.set_xscale('log')
-        ax1.set_yscale('log')
-        ax1.set_xlabel(r'Lag time $t$ [seconds]')
-        ax1.set_ylabel(r'$\langle \Delta r^2 \rangle$ [$\mu$m$^2$]')
-        fig1.tight_layout()
-        fig1.savefig(os.path.join(root_dir, "individual_msd.png"))
-        plt.close(fig1)
 
         A_fit = fit_results['A'].iloc[0]
         n_fit = fit_results['n'].iloc[0]
         fig2, ax2 = plt.subplots()
-        ax2.loglog(emsd.index, emsd, 'o', label='Ensemble MSD')
+        ax2.loglog(emsd.index, emsd, 'o', label='Trapped Particle MSD')
         ax2.loglog(emsd.index, A_fit * emsd.index**n_fit, '--', label=fr'Fit: $A t^n$, $A={A_fit:.2e}$, $n={n_fit:.2f}$')
         ax2.set_xlabel(r'Lag time $t$ [seconds]')
         ax2.set_ylabel(r'$\langle \Delta r^2 \rangle$ [$\mu$m$^2$]')
         ax2.legend()
         fig2.tight_layout()
-        fig2.savefig(os.path.join(root_dir, "ensemble_msd.png"))
+        fig2.savefig(os.path.join(root_dir, "trapped_particle_msd.png"))
         plt.close(fig2)
 
         fig3, ax3 = plt.subplots()
         tp.plot_traj(filtered_trajectories, ax=ax3)
         fig3.tight_layout()
-        fig3.savefig(os.path.join(root_dir, "trajectories.png"))
+        fig3.savefig(os.path.join(root_dir, "trapped_particle_trajectory.png"))
         plt.close(fig3)
 
 
@@ -317,7 +302,7 @@ class TrackingHandler:
     After it is complete, it moves this video file to the complete_track_dir.
     
     When called, it does this one time. if there are no compatible files in the directory, nothing happens."""
-    def trackLatest(self, to_track_dir, complete_track_dir): 
+    def trackLatest(self, to_track_dir, complete_track_dir, window_controller): 
         allowed_extensions = {'.mp4', '.avi', '.mov', '.mkv'} # Update this later if adding more lossless video recording formats!
 
         # Convert inputs that we have into path objects
@@ -338,8 +323,12 @@ class TrackingHandler:
 
         oldest_file = video_files[0] # Only take out the oldest video (smallest st_mtime)
 
-        # Analyze the trajectories for the oldest video
-        self.videoAnalyzeTrajectories(str(oldest_file))
+        # Analyze the trajectories of EVERY PARTICLE for the oldest video
+        trajectories, vid_path = self.videoAnalyzeTrajectories(str(oldest_file))
+
+        # Analyze specifically the trajectories of the TRAPPED PARTICLES for the oldest video
+        trapped_trajectories = self.tagBoxedTrajectories(trajectories, window_controller.bbox_start, window_controller.bbox_end)
+        self.analyzeTaggedTrajectories(trapped_trajectories, vid_path)
 
         # After completion, move the file to the complete_track_dir
         target_path = complete_path / oldest_file.name

@@ -1,0 +1,31 @@
+TRAJECTORY ANALYSIS SUMMARY
+Analysis Date: 2025-06-30 10:38:59.317072
+Video File: recording_2025-06-30_10-38-21.avi
+Resolution: 640 x 480
+Total Frames: 300
+Microns per Pixel: 0.07289795 um/px
+Framerate: 30 fps
+Inversion Applied: False
+
+TRACKING PARAMETERS
+Minmass: 10000
+Particle Radius: 51 px
+Search Range: 10 px
+Memory: 5 frames
+Stub Trajectory Threshold: 5 frames
+
+RESULTS
+Initial Trajectories: 164
+Filtered Long Trajectories: 80
+Mean Trajectory Length: 74.6 frames
+Average Radius: 0.546 um
+Diffusion Coefficient: 0.393 um^2/s  (3.93e-13 m^2/s)
+MSD Fit Parameters: A = 1.57e+00, n = 1.60
+MSD @ 1 frame lag: 0.011 um^2
+
+PHYSICAL CONSTANTS
+Temperature: 20 C (293.15 K)
+Viscosity: 1.002e-03 Pa s
+Boltzmann Constant: 1.380649e-23 J/K
+
+Notes: Appears consistent with superdiffusive! (n > 1) behavior.

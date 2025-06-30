@@ -9,6 +9,7 @@
 - [Programming Guide](#programming-guide)
     - [Device Controllers](#controllers)
     - [The EventHandler Object](#the-eventhandler-object)
+    - [The TrackingHandler Object](#the-trackinghandler-object)
     - [Individual Device Controller Methods](#individual-device-controller-methods)
 
 
@@ -435,6 +436,84 @@ def process_auto_mode(self, particle_in_box: bool, verbose=True):
 To add some controller method to any stage, one would simply place their controller method calls in the areas denoted with the ellipses, and update any member control flow variables respectively.
 
 The entire process has been made as intuitive as possible to ensure easy use and future modification.
+
+## The TrackingHandler Object
+
+This project uses a _TrackingHandler_ object to handle all tracking backend calculations responsible for the analysis of Brownian Trajectories, calculation of Diffusion coefficients, and creation of plots. It is where most of the data taken in this project is sourced. One can also think of the _TrackingHandler_ object as a wrapper class for the [TrackPy](https://soft-matter.github.io/trackpy/v0.6.4/) module. It contains all methods necessary for individual mean squared displacement plot construction, ensemble mean squared displacement, as well as individual particle tracking (needed for trapped particle radii calculations). 
+
+The _EventHandler_ class is initialized in the same way that one initializes the _EventHandler_ class. It takes it many arguments however which determine how the _TrackingHandler_ treats videos and performs tracking (parameters such as sensitivity, radii predictions, trajectory memory, minimum brightness, etc.). A sample initialization of a _TrackHandler_ object would be performed as follows:
+
+```python
+import Tracking_Backend.TrackingInterface
+
+track_handler = TrackingBackend.TrackingInterface.TrackingHandler(
+    invert = False,
+    minmass = 10000,
+    pix_diameter = 51,
+    traj_memory = 5,
+    traj_search_range = 10,
+    stub_traj_length = 5,
+    microns_per_pix = 0.07289795,
+    fps = 30)
+```
+
+The parameters of the TrackHandler class controll the following:
+
+- Invert (Determines whether the tracker looks for bright spots (False) or dark spots (True)
+- minmass (the minimum threshold brightness for a tracked particle)
+- pix_diameter (the predicted pixel diameter of particles you are tracking)
+- traj_memory (how many frames you allow the track to be lost before ending track for particle)
+- traj_search_range (the maximum pixels the same particle can travel in a frame to still be considered the same particle)
+- stub_traj_length (the smallest possible trajectory length in frames before being considered to short/noise)
+- microns_per_pix (the visual resolution of your camera microscope in microns/px)
+- fps (frames per second of video captured)
+
+After the _TrackHandler_ class object is instantiated, one can perform 4 built-in methods:
+
+#### The videoAnalyzeTrajectories Method:
+
+This method is the cornerstone of the tracking ensemble. One simply passes the path of a video which requires tracking, and the method will output annotated diagrams, text files, and csv files containing all trajectory data of every particle. Specifically:
+
+1. A diffusivity histogram
+2. Individual Mean Squared Displacement Plots
+3. Ensemble Mean Squared Displacement Plots
+4. info.txt (containing radii and diffusivity preditions alongside a multitude of other important information)
+5. per_particle_diffusivity_radius.csv
+6. A radii histogram
+7. trajectories.png (a matplotlib diagram showing all tracked trajectories used in radii calculations
+8. trajectory.csv (a file containing all trajectories in tabulated form with enumerated particles)
+
+#### The tagBoxedTrajectories Method:
+
+This method is responsible for tagging specific particles which begin in a passed bounding box (such as a box positioned about the optical trap). One passes in the trajectories.csv dataframe returned from the videoAnalyzeTrajectories method and a bounding box start and end. The method will then return the same trajectories dataframe, however now concatenated with a one hot encoded column indicating 'True' for all particles beginning in the bounding box passed.
+
+This dataframe can then be passed into the analyzeTaggedTrajectories method for tagged particle specific analysis similar to that of the videoAnalyzeTrajectories method.
+
+#### The analyzeTaggedTrajectories Method:
+
+As aforementioned, this method simply takes in a tagged trajectory dataframe, and filters it to only give the information on trajectories which have been tagged. This is useful for classifying trapped particles which began in a bounding box positioned over the location of the optical tweezers. For saving, it is also important to pass a root_dir parameter where the data will be saved.
+
+#### The trackLatest Method:
+
+This method facilitates the automation of the tracking pipeline. It takes in 2 folder path arguments and a Window Controller, instantiating an automatic file flow between the two folders while tracking each video and returning its important data. This function works only while the window controller/visual interface is running, as it requires the bounding box dimensions to perform particle tagging for trapped particle trajectory analysis. The method returns a single boolean, indicating whether files are present in the first folder from which they are sourced.
+
+Below is a sample usage of the trackLatest method to automatically detect and flow any files in the "Recordings" Folder to the "Tracked_Videos" folder, waiting if no videos are present.
+
+```python
+window = VisualInterface_Frontend.WindowInterface.WindowController("Sample window", 1)
+TrackingHandler = Tracking_Backend.TrackingINterface.TrackingHandler(... parameters here ...)
+
+while True:
+    time.sleep*1(
+    files_detected = TrackingHandler.trackLatest(r"Recordings",r"Tracked_Videos", window)
+    if not files_detected:
+        print("Waiting longer for more videos...")
+        time.sleep(60)
+
+```
+
+
+
 
 ## Individual Device Controller Methods
 

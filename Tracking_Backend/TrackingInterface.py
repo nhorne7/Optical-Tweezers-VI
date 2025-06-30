@@ -13,6 +13,7 @@ import shutil
 from pathlib import Path
 
 class TrackingHandler:
+    
     def __init__(self, recording_dir=r"./Recordings", invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
         self.thread = None
         self.is_running = False 
@@ -30,6 +31,8 @@ class TrackingHandler:
         self.only_tagged = only_tagged
         return None
     
+
+
 
     # NOTE TO USER! DUE TO THE MULTIPROCESSING OF THE TP.BATCH FUNCTION, THIS FUNCTION CALL MUST ALWAYS BE WRAPPED IN A IF NAME == MAIN CONDITIONAL OR IT WILL CAUSE A RUNTIME ERROR.
     def videoAnalyzeTrajectories(self, vid_path):
@@ -215,7 +218,9 @@ class TrackingHandler:
         return fixed_trajectories, root_dir
 
 
+
 # USED FOR INDIVIDUAL PARTICLE TAGGING (working)
+
 
     def tagBoxedTrajectories(self, trajectories:pd.DataFrame, bbox_start, bbox_end)->pd.DataFrame:
         boundsTL = (min(bbox_start[0], bbox_end[0]), min(bbox_start[1],bbox_end[1]))
@@ -226,6 +231,8 @@ class TrackingHandler:
         trajectories['started_in_box'] = trajectories['particle'].isin(particles_in_box)
         print(f"Particles starting in box: {list(particles_in_box)}")
         return trajectories
+
+
 
     def analyzeTaggedTrajectories(self, trajectories:pd.DataFrame, root_dir)->None:
         filtered_trajectories = trajectories.loc[trajectories['started_in_box'] == True]
@@ -295,6 +302,8 @@ class TrackingHandler:
         fig3.tight_layout()
         fig3.savefig(os.path.join(root_dir, "trapped_particle_trajectory.png"))
         plt.close(fig3)
+
+
 
 
     """This function takes in a to_track directory, finds the oldest video file in this directory, and performs a track on it. 

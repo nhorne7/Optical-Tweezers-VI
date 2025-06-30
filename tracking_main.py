@@ -24,7 +24,6 @@ def visual_interface_loop():
             if not ret:
                 print("Failed to capture frame.")
                 break
-
             # EVENT HANDLING AND ANNOTAIONS
             frame, particle_in_box = window.annotateCircleDetect(frame) # This line displays circle detection labels on screen
             frame = window.annotateOverlay(frame) # This line annotates all text
@@ -45,11 +44,9 @@ def visual_interface_loop():
         KSC101Controller.release()
         cv2.destroyAllWindows()
 
-#def test_function():
-#    while True:
-#        time.sleep(5)
-#        print("[DEBUG] Running Visual Interface Loop")
-        
+
+
+
 def tracking_loop():
     while True:
         time.sleep(1)
@@ -57,9 +54,13 @@ def tracking_loop():
         if files_detected == False:
             print("Waiting longer for more videos..")
             time.sleep(30)
-    
-    
+
+
+
+
 if __name__ == "__main__":
+
+
     # INITIALIZATION OF DEVICES AND DEVICE CONTROLLER OBJECTS
     KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
     KSC101Controller = Hardware_Interfacing.KSC101Control.KSC101Interface.KSC101Controller(KSC101)
@@ -67,16 +68,19 @@ if __name__ == "__main__":
     window = VisualInterface_Frontend.WindowInterface.WindowController("NH's Particle Detector", 1)
     ledController = Hardware_Interfacing.LedD1BDriverControl.ArduinoLEDInterface.ArduinoLEDController(3)
 
+
     # Initialize all controllers objects
     KSC101Controller.initialize()
     ledController.initialize()
     camera.initialize()
     window.initialize()
         
+
     # Create sliders & init. variable declarations for circle detection overlay
     window.createSlider("param2", 100, 20)
     window.createSlider("maxRadius", 100, 40)
     window.createSlider("minRadius",100, 0)
+
 
     # Initialize an Event Handler with all Controllers passed.
     event_handler = Control_Flow.EventHandling.EventHandler(window, camera, KSC101Controller, ledController)
@@ -90,6 +94,7 @@ if __name__ == "__main__":
                                                 microns_per_pix=0.07289795,
                                                 fps=30)
         
+
 
     # MAIN VISUAL INTERFACE AND TRACKING LOOP BELOW 
     print("//  KSC101 VISUAL SHUTTER CONTROLLER (BASLER CAMERA)  //")

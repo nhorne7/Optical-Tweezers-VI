@@ -15,7 +15,6 @@ from pathlib import Path
 class TrackingHandler:
     
     def __init__(self, recording_dir=r"./Recordings", invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
-        self.thread = None
         self.is_running = False 
         self.recording_dir = recording_dir
         self.invert = invert
@@ -61,7 +60,7 @@ class TrackingHandler:
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
-        D = (A/2)*10**(-12)
+        D = (A/4)*10**(-12)
 
         kb = 1.380649E-23
         T_k = self.room_temperature_c+273.15
@@ -88,7 +87,7 @@ class TrackingHandler:
 
                 A_i = fit['A'].iloc[0]
                 n_i = fit['n'].iloc[0]
-                D_i = (A_i/2) * 1e-12 # In meters now
+                D_i = (A_i/4) * 1e-12 # In meters now
                 r_i = (kb * T_k) / (6 * np.pi * self.eta * D_i)
                 per_particle_D.append(D_i * 1e12) # Back to micrometers^2 seconds
                 per_particle_r.append(r_i * 1e6)  # micrometers units
@@ -241,7 +240,7 @@ class TrackingHandler:
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
-        D = (A/2)*10**(-12)
+        D = (A/4)*10**(-12)
 
         kb = 1.380649E-23
         T_k = self.room_temperature_c+273.15

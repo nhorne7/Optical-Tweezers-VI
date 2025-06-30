@@ -61,7 +61,7 @@ class TrackingHandler:
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
-        D = (A/4)*10**(-12)
+        D = (A/2)*10**(-12)
 
         kb = 1.380649E-23
         T_k = self.room_temperature_c+273.15
@@ -88,7 +88,7 @@ class TrackingHandler:
 
                 A_i = fit['A'].iloc[0]
                 n_i = fit['n'].iloc[0]
-                D_i = (A_i/4) * 1e-12 # In meters now
+                D_i = (A_i/2) * 1e-12 # In meters now
                 r_i = (kb * T_k) / (6 * np.pi * self.eta * D_i)
                 per_particle_D.append(D_i * 1e12) # Back to micrometers^2 seconds
                 per_particle_r.append(r_i * 1e6)  # micrometers units
@@ -241,7 +241,7 @@ class TrackingHandler:
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
-        D = (A/4)*10**(-12)
+        D = (A/2)*10**(-12)
 
         kb = 1.380649E-23
         T_k = self.room_temperature_c+273.15

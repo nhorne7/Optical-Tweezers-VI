@@ -34,11 +34,17 @@ if __name__ == "__main__":
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         D = (A/4)*10**(-12)
-
         kb = 1.380649E-23
         T_k = 20+273.15
         r = (kb*T_k)/(6*np.pi*1.002E-3*D)
-        radius_array.append(r)
+        radius_array.append(r*(10**6))
 
-    plt.plot([int((i/num_splits)*video_length) for i in range (1, num_splits+1)], 1-np.array(radius_array))
+    plt.plot([int((i/num_splits)*video_length) for i in range (1, num_splits+1)], 1-np.array(radius_array), linestyle='--', label=r"Absolute Error of Radius ($\mu$m)", color="red")
+    plt.scatter([int((i/num_splits)*video_length) for i in range (1, num_splits+1)], 1-np.array(radius_array), color="black")
+
+    plt.legend()
+    plt.title(r"Plot of Particle Radius Absolute Error ($\mu$m) against Number of Frames Analyzed")
+    plt.xlabel("Number of Frames")
+    plt.ylabel(r"Absolute Error of Radius ($\mu$m)")
+    plt.grid()
     plt.show()

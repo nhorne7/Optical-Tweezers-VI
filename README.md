@@ -10,7 +10,6 @@
     - [Device Controllers](#controllers)
     - [The EventHandler Object](#the-eventhandler-object)
     - [The TrackingHandler Object](#the-trackinghandler-object)
-    - [The TrackingHandler Object](#the-trackinghandler-object)
     - [Individual Device Controller Methods](#individual-device-controller-methods)
 
 

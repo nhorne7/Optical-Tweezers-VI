@@ -344,7 +344,74 @@ class TrackingHandler:
 
         print(f"Video {oldest_file.name} transferred to {complete_track_dir} successfully")
         return True
+    
+    def getAverageRadius(self, vid_path, total_frames, verbose=True):
+        @pims.pipeline
+        def gray(image):
+            return image[:, :, 1]
+        tp.enable_numba()
+        tp.quiet()
+        frames = gray(pims.PyAVVideoReader(vid_path))
+        frames = list(frames) # Load Frames to system RAM
+        n_frames = len(frames)
 
+        print(f"Detecting Particle Positions for {vid_path}") if verbose else ...
+        f_batch = tp.batch(frames, self.pix_diameter, minmass=self.minmass, invert=self.invert, processes='auto')
+
+        print(f"Linking & Filtering Trajectories for {vid_path}") if verbose else ...
+        trajectories = tp.link(f_batch, self.traj_search_range, memory=self.traj_memory)
+        long_trajectories = tp.filter_stubs(trajectories, self.stub_traj_length)
+        drift = tp.compute_drift(long_trajectories)
+
+        print(f"Cleaning Trajectories for {vid_path}") if verbose else ...
+        fixed_trajectories = tp.subtract_drift(long_trajectories.copy(), drift)
+        fixed_trajectories = fixed_trajectories.reset_index(drop=True)
+        emsd = tp.emsd(fixed_trajectories, self.microns_per_pix, self.fps,max_lagtime=total_frames) 
+        fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
+        A = fit_results['A'].iloc[0]
+        D = (A/4)*10**(-12)
+
+        kb = 1.380649E-23
+        T_k = self.room_temperature_c+273.15
+        r = (kb*T_k)/(6*np.pi*self.eta*D)
+
+        return r
+    
+    def getVidLength(self, vid_path):
+        @pims.pipeline
+        def gray(image):
+            return image[:, :, 1]
+        tp.enable_numba()
+        tp.quiet()
+        frames = gray(pims.PyAVVideoReader(vid_path))
+        frames = list(frames) # Load Frames to system RAM
+        n_frames = len(frames)
+        return n_frames
+
+    def getTrajectories(self, vid_path):
+        start_time = time.time()
+        @pims.pipeline
+        def gray(image):
+            return image[:, :, 1]
+        tp.enable_numba()
+        tp.quiet()
+        frames = gray(pims.PyAVVideoReader(vid_path))
+        frames = list(frames) # Load Frames to system RAM
+        n_frames = len(frames)
+
+        print(f"Detecting Particle Positions for {vid_path}")
+        f_batch = tp.batch(frames, self.pix_diameter, minmass=self.minmass, invert=self.invert, processes='auto')
+
+        print(f"Linking & Filtering Trajectories for {vid_path}")
+        trajectories = tp.link(f_batch, self.traj_search_range, memory=self.traj_memory)
+        long_trajectories = tp.filter_stubs(trajectories, self.stub_traj_length)
+        drift = tp.compute_drift(long_trajectories)
+
+        print(f"Cleaning Trajectories for {vid_path}")
+        fixed_trajectories = tp.subtract_drift(long_trajectories.copy(), drift)
+        fixed_trajectories = fixed_trajectories.reset_index(drop=True)
+        print(f"{n_frames} frames analyzed in {(time.time()-start_time):.2f} s")
+        return fixed_trajectories
 
 #df = pd.read_csv("/Users/noah/Desktop/Particle Tracking/TrackingSoftware/Trajectory_Data/FirstTrackTestData/trajectory.csv")
 #tagged_df = tagBoxedTrajectories(df, (100,100), (350,350))

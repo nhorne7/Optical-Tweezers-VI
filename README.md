@@ -3,7 +3,7 @@
 ### Contents:
 - [About the Visual Interface](#about-the-visual-interface)
 - [Installation & Required Dependencies](#installation--required-dependencies)
-    - [OOB Use of the Visual Interace](#oob-usage-of-visual-interface)
+    - [OOB Use of the Visual Interface](#oob-usage-of-visual-interface)
 - [Auto Mode Usage](#auto-mode)
 - [Tracking Calibration Instructions](#tracking-calibration-trackpycalibrationnotebookipynb)
 - [Programming Guide](#programming-guide)

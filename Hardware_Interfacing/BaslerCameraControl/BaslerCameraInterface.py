@@ -96,3 +96,10 @@ class BaslerCameraController:
         outPath = os.path.join(screenshot_dir, filename)
         cv2.imwrite(outPath, self.raw_frame_copy)
         print(f"Screenshot Saved to: {outPath}")
+
+    def setExposureTime(self, exposure_time):
+        self.camera.ExposureTime.Value = exposure_time
+        if self.camera.ExposureTime.Value != exposure_time:
+            print("Could not modify exposure time of BASLER camera!")
+        else:
+            return True

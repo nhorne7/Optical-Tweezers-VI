@@ -139,7 +139,7 @@ class IsoPlane():
         
         
         #Regions of Interest
-        self.custom_ROI = [0,180,1340,40] #Default ROI covering 40 pixels vertical about the center
+        self.custom_ROI = [0,180,1340,40] #Default ROI covering 40 pixels vertical about the center 
         
         #Sensor
         self.sensor_temp = -85           #Default temperature of -85C

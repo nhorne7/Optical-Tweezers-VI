@@ -4,11 +4,16 @@ import time
 
 
 class EventHandler:
-    def __init__(self, window, camera, shutter_controller, led_controller):
+    def __init__(self, window, camera, shutter_controller, led_controller, raman_measurement_func=None):
         self.window = window
         self.camera = camera
         self.shutter = shutter_controller
         self.led = led_controller
+        self.raman_meas = raman_measurement_func
+        self.frames = 10
+        self.data_dir = None
+        self.name = "RamanCapture"
+        self.show_plot = True
 
         # Auto shutter mode states
         self.auto_mode_enabled = False
@@ -83,6 +88,7 @@ class EventHandler:
                     self.led.ledOFF()
                     print("Turning LED OFF..") if verbose else ...
                     print("Beginning Raman Measurement..") if verbose else ...
+                    self.raman_meas(self.frames, self.data_dir, self.name, self.show_plot) if self.raman_meas != None else ... # CALL RAMAN MEASUREMENT FUNCTION
                     # Start measurement timer
                     self.measurement_start_time = current_time
                     self.waiting_for_particle = False

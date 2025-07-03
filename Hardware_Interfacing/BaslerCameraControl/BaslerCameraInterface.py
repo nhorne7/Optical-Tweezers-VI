@@ -21,9 +21,9 @@ class BaslerCameraController:
             self.camera.Open()
 
             # Set Timed exposure mode and disable auto exposure
-            self.camera.ExposureMode.SetValue("Timed")
-            if pylon.IsAvailable(self.camera.ExposureAuto):
-                self.camera.ExposureAuto.SetValue("Off") # this will allow manual control of the exposure for the camera.
+            # self.camera.ExposureMode.SetValue("Timed")
+            # if pylon.IsAvailable(self.camera.ExposureAuto):
+            #     self.camera.ExposureAuto.SetValue("Off") # this will allow manual control of the exposure for the camera.
             # Check that the above code does not break the camera controller :)
 
             self.camera.StartGrabbing()
@@ -46,8 +46,8 @@ class BaslerCameraController:
             self.camera = None
         print("Basler Camera is OFF")
 
-    def changeExposureTime(self, exposure_time_us=30000):
-        self.camera.ExposureTimeAbs.SetValue(exposure_time_us)
+    # def changeExposureTime(self, exposure_time_us=30000):
+    #     self.camera.ExposureTimeAbs.SetValue(exposure_time_us)
 
     def read(self):
         try:

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     print("//  KSC101 VISUAL SHUTTER CONTROLLER (BASLER CAMERA)  //")
     
     # Create Instances of each Controller & Device
-    camera = Hardware_Interfacing.WebCameraControl.WebcamInterface.WebcamController()
+    camera = Hardware_Interfacing.BaslerCameraControl.BaslerCameraInterface.BaslerCameraController()
     window = VisualInterface_Frontend.WindowInterface.WindowController("Minimal Video Recorder", 0.5)
     
     # Initialize all controllers objects
@@ -25,6 +25,9 @@ if __name__ == "__main__":
     window.initialize()
     recording = False
     # Main GUI Loop
+
+
+
     try:
         while True:
             ret, frame = camera.read()

@@ -14,7 +14,7 @@ from pathlib import Path
 
 class TrackingHandler:
     
-    def __init__(self, recording_dir=r"./Recordings", invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False)->None:
+    def __init__(self, recording_dir=r"./Recordings", invert=False, minmass = 500, pix_diameter = 21, traj_memory = 3, traj_search_range=5, stub_traj_length = 30, microns_per_pix = 4.8, fps = 60, room_temperature_c = 20, eta = 1.002E-3, only_tagged=False, zero_out_threshold = 0.005, max_frames = 100)->None:
         self.is_running = False 
         self.recording_dir = recording_dir
         self.invert = invert
@@ -28,6 +28,8 @@ class TrackingHandler:
         self.room_temperature_c = room_temperature_c
         self.eta = eta
         self.only_tagged = only_tagged
+        self.zero_out_threshold = zero_out_threshold
+        self.max_frames = max_frames
         return None
     
 
@@ -53,10 +55,22 @@ class TrackingHandler:
         long_trajectories = tp.filter_stubs(trajectories, self.stub_traj_length)
         drift = tp.compute_drift(long_trajectories)
 
+
+
         print(f"Cleaning Trajectories for {vid_path}")
+        # Drift Subtraction
         fixed_trajectories = tp.subtract_drift(long_trajectories.copy(), drift)
         fixed_trajectories = fixed_trajectories.reset_index(drop=True)
-        emsd = tp.emsd(fixed_trajectories, self.microns_per_pix, self.fps,max_lagtime=n_frames) 
+
+        # IMSD NOISE FILTERING (Remove any particles with a 0 value mean squared displacement)
+        im = tp.imsd(fixed_trajectories, self.microns_per_pix, self.fps)
+        # Identify particles that have zero MSD at any lag time
+        particles_with_zero_msd = im.columns[(im <= self.zero_out_threshold).any(axis=0)]
+        # Remove these particles from the original dataframe
+        fixed_trajectories = fixed_trajectories[~fixed_trajectories['particle'].isin(particles_with_zero_msd)]
+        print("Removed particles with zero MSD at any lag time:", particles_with_zero_msd.tolist())
+
+        emsd = tp.emsd(fixed_trajectories, self.microns_per_pix, self.fps,max_lagtime=self.max_frames) 
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         n = fit_results['n'].iloc[0]
@@ -179,7 +193,7 @@ class TrackingHandler:
 
         
         # Image Creation
-        imsd = tp.imsd(fixed_trajectories, self.microns_per_pix, self.fps, max_lagtime=n_frames)
+        imsd = tp.imsd(fixed_trajectories, self.microns_per_pix, self.fps, max_lagtime=self.max_frames)
         fig1, ax1 = plt.subplots()
         ax1.plot(imsd.index, imsd, 'k-', alpha=0.2)
         ax1.set_xscale('log')
@@ -266,6 +280,7 @@ class TrackingHandler:
             f.write(f"Originally Trapped Trajectories: {n_filtered_traj}\n")
             f.write(f"Mean Trajectory Length: {mean_len:.1f} frames\n")
             f.write(f"Average Radius: {r_um:.3f} um\n")
+            f.write(f"Average Diameter: {r_um*2:.3f} um\n")
             f.write(f"Diffusion Coefficient: {D_um2s:.3f} um^2/s  ({D:.2e} m^2/s)\n")
             f.write(f"MSD Fit Parameters: A = {A:.2e}, n = {n:.2f}\n")
             f.write(f"MSD @ 1 frame lag: {msd_lag1:.3f} um^2\n\n")
@@ -366,7 +381,16 @@ class TrackingHandler:
         print(f"Cleaning Trajectories for {vid_path}") if verbose else ...
         fixed_trajectories = tp.subtract_drift(long_trajectories.copy(), drift)
         fixed_trajectories = fixed_trajectories.reset_index(drop=True)
-        emsd = tp.emsd(fixed_trajectories, self.microns_per_pix, self.fps,max_lagtime=total_frames) 
+
+        # IMSD NOISE FILTERING (Remove any particles with a 0 value mean squared displacement)
+        im = tp.imsd(fixed_trajectories, self.microns_per_pix, self.fps)
+        # Identify particles that have zero MSD at any lag time
+        particles_with_zero_msd = im.columns[(im <= self.zero_out_threshold).any(axis=0)]
+        # Remove these particles from the original dataframe
+        fixed_trajectories = fixed_trajectories[~fixed_trajectories['particle'].isin(particles_with_zero_msd)]
+        print("Removed particles with zero MSD at any lag time:", particles_with_zero_msd.tolist())
+
+        emsd = tp.emsd(fixed_trajectories, self.microns_per_pix, self.fps,max_lagtime=self.max_frames) 
         fit_results = tp.utils.fit_powerlaw(emsd, plot=False)
         A = fit_results['A'].iloc[0]
         D = (A/4)*10**(-12)
@@ -410,6 +434,15 @@ class TrackingHandler:
         print(f"Cleaning Trajectories for {vid_path}")
         fixed_trajectories = tp.subtract_drift(long_trajectories.copy(), drift)
         fixed_trajectories = fixed_trajectories.reset_index(drop=True)
+         
+        # IMSD NOISE FILTERING (Remove any particles with a 0 value mean squared displacement)
+        im = tp.imsd(fixed_trajectories, self.microns_per_pix, self.fps)
+        # Identify particles that have zero MSD at any lag time
+        particles_with_zero_msd = im.columns[(im <= self.zero_out_threshold).any(axis=0)]
+        # Remove these particles from the original dataframe
+        fixed_trajectories = fixed_trajectories[~fixed_trajectories['particle'].isin(particles_with_zero_msd)]
+        print("Removed particles with zero MSD at any lag time:", particles_with_zero_msd.tolist())
+
         print(f"{n_frames} frames analyzed in {(time.time()-start_time):.2f} s")
         return fixed_trajectories
 

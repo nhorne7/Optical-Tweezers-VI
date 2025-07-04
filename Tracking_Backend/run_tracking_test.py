@@ -3,12 +3,14 @@ import TrackingInterface
 
 TrackingHandler = TrackingInterface.TrackingHandler(
                                               invert=False,
-                                              minmass=10000,
-                                              pix_diameter=51,
+                                              minmass=95,
+                                              pix_diameter=9,
                                               traj_memory=5,
-                                              traj_search_range=10,
-                                              stub_traj_length=5,
+                                              traj_search_range=20,
+                                              stub_traj_length=50,
                                               microns_per_pix=0.07289795,
-                                              fps=60)
+                                              fps=60,
+                                              zero_out_threshold=0.003,
+                                              max_frames=60)
 if __name__ == "__main__":
-    TrackingHandler.videoAnalyzeTrajectories(r"Tracking_Backend\Sample_Recording\recording_2025-06-19_10-16-51.avi")
+    TrackingHandler.videoAnalyzeTrajectories(r"C:\Users\nohor3086\Desktop\Particle Recordings\Recordings\053um3.avi")

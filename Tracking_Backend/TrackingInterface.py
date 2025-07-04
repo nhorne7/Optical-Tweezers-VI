@@ -109,23 +109,50 @@ class TrackingHandler:
                 print('e')
                 continue
 
+
+        # Remove NaNs and convert to numpy array
+        per_particle_r_um = np.array(per_particle_r)
+        per_particle_r_um = per_particle_r_um[~np.isnan(per_particle_r_um)]
+
+        # Define lower and upper percentiles to exclude extreme outliers
+        lower, upper = np.percentile(per_particle_r_um, [1, 98])
+
         fig_r, ax_r = plt.subplots()
-        ax_r.hist(per_particle_r, bins=100, color="blue")
-        ax_r.set_xlim(0,max(20, np.nanmean(per_particle_r)+1))
-        ax_r.set_xlabel('Particle Radius [um]')
-        ax_r.set_ylabel("Particle Count")
-        ax_r.set_title(r"Histogram for Estimated Particle Radii [$\mu$m]")
-        ax_r.grid()
+        ax_r.hist(per_particle_r_um, bins=100, color="blue", edgecolor='black')
+
+        # Apply percentile-based x-axis range
+        ax_r.set_xlim(lower, upper)
+
+        # Labeling
+        ax_r.set_xlabel(r'Particle Radius [$\mu$m]')
+        ax_r.set_ylabel('Particle Count')
+        ax_r.set_title('Histogram of Estimated Particle Radii')
+        ax_r.grid(True)
+
         fig_r.tight_layout()
         fig_r.savefig(os.path.join(root_dir, "radii_hist.png"))
         plt.close(fig_r)
 
+
+        import matplotlib.ticker as ticker
         fig_D, ax_D = plt.subplots()
-        ax_D.hist(per_particle_D, bins=100, color='orange')
+        bins = 150
+        
+        counts, bin_edges, _ = ax_D.hist(per_particle_D, bins=bins, color='orange', alpha= 0.6, label="Diffusivity Histogram")
+
+        # Plot expected PDF Behavior
+        bin_centers = (bin_edges[:-1]+bin_edges[1:]) / 2
+        mean_D = np.mean(per_particle_D)
+        pdf = (1/mean_D) * np.exp(-bin_centers/mean_D)
+        pdf_scaled = pdf * np.diff(bin_edges)[0] * len(per_particle_D)
+        ax_D.plot(bin_centers, pdf_scaled, "k--", linewidth=2, label=fr"$P(D) = \frac{{1}}{{{mean_D:.2f}}} e^{{-D/{mean_D:.2f}}}$")
+
+
         ax_D.set_xlim(0,max(10, np.nanmean(per_particle_D)+1))
         ax_D.set_xlabel(r'Diffusivity [$\mu$m$^2$/s]')
         ax_D.set_ylabel("Particle Count")
         ax_D.grid()
+        ax_D.legend()
         fig_D.tight_layout()
         fig_D.savefig(os.path.join(root_dir, "diffusivity_hist.png"))
         plt.close(fig_D)
@@ -360,16 +387,22 @@ class TrackingHandler:
         print(f"Video {oldest_file.name} transferred to {complete_track_dir} successfully")
         return True
     
-    def getAverageRadius(self, vid_path, total_frames, verbose=True):
-        @pims.pipeline
-        def gray(image):
-            return image[:, :, 1]
-        tp.enable_numba()
-        tp.quiet()
-        frames = gray(pims.PyAVVideoReader(vid_path))
-        frames = list(frames) # Load Frames to system RAM
-        n_frames = len(frames)
-
+    def getAverageRadius(self, vid_path=None, frames=None, total_frames=None, verbose=True):
+        if frames is None:
+            if vid_path is None:
+                raise ValueError("Must provide either frames or vid_path!")
+            
+            @pims.pipeline
+            def gray(image):
+                return image[:, :, 1]
+            tp.enable_numba()
+            tp.quiet()
+            frames = gray(pims.PyAVVideoReader(vid_path))
+            frames = list(frames) # Load Frames to system RAM
+        else:
+            if len(frames[0].shape) == 3:
+                frames = [f[:, :, 1] if f.shape[2] >= 2 else f for f in frames]
+        
         print(f"Detecting Particle Positions for {vid_path}") if verbose else ...
         f_batch = tp.batch(frames, self.pix_diameter, minmass=self.minmass, invert=self.invert, processes='auto')
 

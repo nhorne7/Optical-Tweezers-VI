@@ -14,9 +14,10 @@ import threading
 from multiprocessing import Process
 import Tracking_Backend.TrackingInterface
 
-
+run_tracking = True
 
 def visual_interface_loop(): 
+    global run_tracking
     # Main GUI Loop
     try:
         while True:
@@ -43,6 +44,7 @@ def visual_interface_loop():
         ledController.release()
         KSC101Controller.release()
         cv2.destroyAllWindows()
+        run_tracking = False
 
 
 
@@ -55,6 +57,9 @@ def tracking_loop():
             print("Waiting longer for more videos..")
             time.sleep(30)
 
+        if not run_tracking:
+            print("Killed Tracking Thread.")
+            break
 
 
 

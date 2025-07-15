@@ -134,18 +134,18 @@ class TrackingHandler:
         plt.close(fig_r)
 
 
-        import matplotlib.ticker as ticker
+        # import matplotlib.ticker as ticker
         fig_D, ax_D = plt.subplots()
         bins = 150
         
         counts, bin_edges, _ = ax_D.hist(per_particle_D, bins=bins, color='orange', alpha= 0.6, label="Diffusivity Histogram")
 
         # Plot expected PDF Behavior
-        bin_centers = (bin_edges[:-1]+bin_edges[1:]) / 2
-        mean_D = np.mean(per_particle_D)
-        pdf = (1/mean_D) * np.exp(-bin_centers/mean_D)
-        pdf_scaled = pdf * np.diff(bin_edges)[0] * len(per_particle_D)
-        ax_D.plot(bin_centers, pdf_scaled, "k--", linewidth=2, label=fr"$P(D) = \frac{{1}}{{{mean_D:.2f}}} e^{{-D/{mean_D:.2f}}}$")
+        # bin_centers = (bin_edges[:-1]+bin_edges[1:]) / 2
+        # mean_D = np.mean(per_particle_D)
+        # pdf = (1/mean_D) * np.exp(-bin_centers/mean_D)
+        # pdf_scaled = pdf * np.diff(bin_edges)[0] * len(per_particle_D)
+        # ax_D.plot(bin_centers, pdf_scaled, "k--", linewidth=2, label=fr"$P(D) = \frac{{1}}{{{mean_D:.2f}}} e^{{-D/{mean_D:.2f}}}$")
 
 
         ax_D.set_xlim(0,max(10, np.nanmean(per_particle_D)+1))

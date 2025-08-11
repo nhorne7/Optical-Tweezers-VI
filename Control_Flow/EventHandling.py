@@ -39,6 +39,8 @@ class EventHandler:
     def handle_key(self, key):
         if key == ord('q'):
             return 'quit'
+        
+
         elif key == ord('r'):
             if not self.camera.is_recording:
                 self.camera.startRecording()
@@ -46,10 +48,16 @@ class EventHandler:
             else:
                 self.camera.stopRecording()
                 self.window.is_recording = False
+
+
         elif key == ord('e'):
             self.window.editing = not self.window.editing
+
+
         elif key == ord('c'):
             self.window.crosshair = not self.window.crosshair
+
+
         elif key == ord('a'):
             self.window.auto_shutter = not self.window.auto_shutter
             self.auto_mode_enabled = not self.auto_mode_enabled
@@ -62,20 +70,31 @@ class EventHandler:
             self.shutter.open()
             print(f"AUTO_SHUTTER = {self.auto_mode_enabled}")
 
+
         elif key == ord('s'):
             self.camera.screengrab()
+
+
         elif key == ord('o') and not self.window.auto_shutter:
             if self.shutter.is_open:
                 self.shutter.close()
             else:
                 self.shutter.open()
+
+                
         return None
+
+
+
+
+
 
     def process_auto_mode(self, particle_in_box: bool, verbose=True):
         current_time = time.time()
         self.window.auto_shutter = True
 
         particle_detected = particle_in_box
+
 
         if self.waiting_for_particle:
             self.led.ledON() # <-- LED controller method
@@ -96,6 +115,10 @@ class EventHandler:
             else:
                 self.in_trap_start_time = None
 
+
+
+
+
         elif self.waiting_for_measurement:
             if current_time - self.measurement_start_time >= self.MEASUREMENT_TIME:
                 self.led.ledON()  # Begin LED ON before checking particle
@@ -103,6 +126,10 @@ class EventHandler:
                 self.led_on_time = current_time  # Start 2-second delay
                 self.waiting_for_measurement = False
                 self.waiting_for_led_recovery = True
+
+
+
+
 
         elif self.waiting_for_led_recovery:
             if current_time - self.led_on_time >= self.LED_ON_TIME:
@@ -123,6 +150,11 @@ class EventHandler:
                     self.waiting_for_led_recovery = False
                     self.waiting_for_particle = True
                     self.in_trap_start_time = None
+
+
+
+
+
 
         elif self.waiting_for_dispersal:
             if current_time - self.dispersal_start_time >= self.DISPERSAL_WAIT_TIME:

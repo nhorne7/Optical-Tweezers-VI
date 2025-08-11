@@ -52,11 +52,10 @@ def visual_interface_loop():
 def tracking_loop():
     while True:
         time.sleep(1)
-        files_detected = TrackingHandler.trackLatest(r"Recordings",r"Tracked_Videos", window)
+        files_detected = TrackingHandler.trackLatest(r"Recordings",r"Tracked_Videos", window) # This takes the latest video that appeared in the Recordings folder and tracks it, saving the results to the Tracked_Videos folder.
         if files_detected == False:
             print("Waiting longer for more videos..")
             time.sleep(30)
-
         if not run_tracking:
             print("Killed Tracking Thread.")
             break
@@ -64,7 +63,6 @@ def tracking_loop():
 
 
 if __name__ == "__main__":
-
 
     # INITIALIZATION OF DEVICES AND DEVICE CONTROLLER OBJECTS
     KSC101 = Hardware_Interfacing.KSC101Control.KSC101Interface.CreateDevice("68801184")
@@ -81,7 +79,7 @@ if __name__ == "__main__":
     window.initialize()
         
 
-    # Create sliders & init. variable declarations for circle detection overlay
+    # Create sliders & init. variable declarations for circle detection (Fast Hough Circle Detection)
     window.createSlider("param2", 100, 20)
     window.createSlider("maxRadius", 100, 40)
     window.createSlider("minRadius",100, 0)

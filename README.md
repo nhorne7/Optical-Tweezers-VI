@@ -52,6 +52,8 @@ Using this version of Python or a later version is highly recommended to ensure 
 - [PySerial](https://pypi.org/project/pyserial/) (PySerial permits USB serial communication necessary for interfacing with an external Arduino)
 - [Arduino-Python3](https://pypi.org/project/arduino-python3/) (Further Arduino compatibility package)
 
+Note: To simply install all of these. Run the batch file under Prepackaged_Executables "install_required_pip_dependencies.bat". This will automate the procedure.
+
 #### Kinesis SDK Installation Instructions:
 
 The **Kinesis SDK** is a Software Development Kit created by Thorlabs to allow easy interfacing with Thorlabs components. 

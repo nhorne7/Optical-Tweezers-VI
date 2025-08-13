@@ -36,12 +36,14 @@ class EventHandler:
         self.LED_ON_TIME = 2.0
 
 
-    def handle_key(self, key):
+    def handle_key(self, key, verbose = False):
         if key == ord('q'):
+            print("'q' pressed, QUITTING..") if verbose else ...
             return 'quit'
         
 
         elif key == ord('r'):
+            print("'r' pressed..") if verbose else ...
             if not self.camera.is_recording:
                 self.camera.startRecording()
                 self.window.is_recording = True
@@ -51,14 +53,18 @@ class EventHandler:
 
 
         elif key == ord('e'):
+            print("'e' pressed..") if verbose else ...
             self.window.editing = not self.window.editing
 
 
         elif key == ord('c'):
+            print("'c' pressed..") if verbose else ...
             self.window.crosshair = not self.window.crosshair
 
 
         elif key == ord('a'):
+            print("'a' pressed..") if verbose else ...
+
             self.window.auto_shutter = not self.window.auto_shutter
             self.auto_mode_enabled = not self.auto_mode_enabled
             self.waiting_for_dispersal = False
@@ -72,14 +78,29 @@ class EventHandler:
 
 
         elif key == ord('s'):
+            print("'s' pressed..") if verbose else ...
+
             self.camera.screengrab()
 
 
         elif key == ord('o') and not self.window.auto_shutter:
+            print("'o' pressed..") if verbose else ...
+
             if self.shutter.is_open:
                 self.shutter.close()
             else:
                 self.shutter.open()
+
+        elif key == 2490368: # Keycode for up arrow
+            print("'UP' pressed..")
+            self.camera.setExposureTime(self.camera.getExposureTime()+100, True) if verbose else self.camera.setExposureTime(self.camera.getExposureTime()+100, False)
+        
+        elif key == 2621440: # Key code for down arrow
+            print("'DOWN' pressed..")
+            self.camera.setExposureTime(self.camera.getExposureTime()-100, True) if verbose else self.camera.setExposureTime(self.camera.getExposureTime()-100, False)
+
+        elif key == ord('f'):
+            print(f"Current Camera FPS: {self.camera.getAcquisitionRate()}")
 
                 
         return None
@@ -87,7 +108,7 @@ class EventHandler:
 
 
 
-
+    # AUTO MODE CONTROL FLOW BELOW
 
     def process_auto_mode(self, particle_in_box: bool, verbose=True):
         current_time = time.time()

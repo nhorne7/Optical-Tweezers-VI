@@ -132,6 +132,10 @@ Upon the initial startup of the visual interface, the user will notice a few on-
 - **'e'** is used to enter EDITING MODE, allowing the adjustment of the yellow detection bounding box using click & drag directly on the screen.
 - **'a'** toggles between MANUAL MODE and AUTO MODE modes (more in detail below).
 - **'o'** opens and closes the SH05R/M shutter toggleably when interface is in MANUAL MODE.
+- **'f'** gets the current acquisition rate (FPS) of the system.
+- **'UPARROW'** increases camera exposure (+100ms)
+- **'DOWNARROW'** decreases camera exposure (-100ms)
+
 
 ## Auto Mode:
 

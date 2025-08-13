@@ -13,6 +13,7 @@ class BaslerCameraController:
         self.vidout = None
         self.camera = None
         self.converter = None
+        self.exposure_time = 5674 # Default Exposure time (ms)
 
     def initialize(self):
         print("Initializing Basler Camera..")
@@ -26,12 +27,17 @@ class BaslerCameraController:
             #     self.camera.ExposureAuto.SetValue("Off") # this will allow manual control of the exposure for the camera.
             # Check that the above code does not break the camera controller :)
 
+            self.camera.Width.Value = self.camera.Width.Max  # Set the maximum possible resolution for the BASLER camera
+            self.camera.Height.Value = self.camera.Height.Max
+
+            self.camera.ExposureTime.SetValue(self.exposure_time) # Initialize default Exposure Time
+
             self.camera.StartGrabbing()
             self.converter = pylon.ImageFormatConverter()
             print("Converter Object Created")
             self.converter.OutputPixelFormat = pylon.PixelType_RGB8packed
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
-            print("Basler Camera is ON")
+            print(f"Basler Camera is ON at Exposure Time (ms): {self.camera.ExposureTime.Value}")
         except Exception as e:
             print(f"Failed to initialize camera: {e}")
             raise
@@ -45,9 +51,6 @@ class BaslerCameraController:
             self.camera.Close()
             self.camera = None
         print("Basler Camera is OFF")
-
-    # def changeExposureTime(self, exposure_time_us=30000):
-    #     self.camera.ExposureTimeAbs.SetValue(exposure_time_us)
 
     def read(self):
         try:
@@ -97,9 +100,30 @@ class BaslerCameraController:
         cv2.imwrite(outPath, self.raw_frame_copy)
         print(f"Screenshot Saved to: {outPath}")
 
-    def setExposureTime(self, exposure_time):
-        self.camera.ExposureTime.Value = exposure_time
-        if self.camera.ExposureTime.Value != exposure_time:
+    def setExposureTime(self, exposure_time, verbose=False):
+        self.camera.ExposureTime.SetValue(exposure_time)
+        if self.camera.Exposuretime.Value != exposure_time:
             print("Could not modify exposure time of BASLER camera!")
+            return False
         else:
+            self.exposure_time = exposure_time
+            print(f"Exposure Time (ms) = {exposure_time}") if verbose else ...
             return True
+        
+    def getExposureTime(self):
+        return(self.camera.ExposureTime.Value)
+    
+    def setAcquisitionRate(self, rate, verbose = False):
+        self.camera.AcquisitionFrameRateEnable.Value = True
+        self.camera.AcquisitionFrameRate.Value = rate
+        if self.camera.AcquisitionFrameRate.Value != rate:
+            print("Acquisition Rate could not be set!")
+            return False
+        else:
+            print(f"Acquisition Rate set to ({rate}) FPS") if verbose else ...
+            return True
+    
+    def getAcquisitionRate(self):
+        return(self.camera.ResultingFrameRate.Value)
+
+        
